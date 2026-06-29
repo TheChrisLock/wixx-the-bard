@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3 uid="uid://b0wixxmain00000"]
+
+[ext_resource type="Script" path="res://scripts/LevelGeometry.cs" id="1_level"]
+[ext_resource type="Script" path="res://scripts/Player.cs" id="2_player"]
+[ext_resource type="Resource" path="res://config/Tunables.tres" id="3_tun"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
+size = Vector2(16, 16)
+
+[node name="Main" type="Node2D"]
+
+[node name="Level" type="TileMapLayer" parent="."]
+script = ExtResource("1_level")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(160, 240)
+script = ExtResource("2_player")
+Tunables = ExtResource("3_tun")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("RectangleShape2D_box")
+
+[node name="Box" type="ColorRect" parent="Player"]
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.227451, 0.627451, 1, 1)

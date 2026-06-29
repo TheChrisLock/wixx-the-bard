@@ -1,0 +1,40 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{tscn,tres,godot,import,cfg}]
+indent_style = tab
+
+[*.gd]
+indent_style = tab
+
+[*.cs]
+# --- Naming & style (CLAUDE.md rule 9): PascalCase methods, _camelCase private fields ---
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+dotnet_naming_style.underscore_camel.required_prefix = _
+
+dotnet_naming_rule.methods_pascal.severity = warning
+dotnet_naming_rule.methods_pascal.symbols = methods
+dotnet_naming_rule.methods_pascal.style = pascal
+dotnet_naming_symbols.methods.applicable_kinds = method
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:warning
+dotnet_sort_system_directives_first = true
+dotnet_style_qualification_for_field = false:suggestion
+csharp_style_var_for_built_in_types = false:suggestion
+
+# Treat unused usings as warnings so `dotnet format` keeps files clean.
+dotnet_diagnostic.IDE0005.severity = warning
