@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://b0wixxmain00000"]
+[gd_scene load_steps=20 format=3 uid="uid://b0wixxmain00000"]
 
 [ext_resource type="Script" path="res://scripts/Game.cs" id="0_game"]
 [ext_resource type="Script" path="res://scripts/LevelGeometry.cs" id="1_level"]
@@ -9,6 +9,9 @@
 [ext_resource type="Shader" path="res://assets/shaders/Desaturate.gdshader" id="6_desat_sh"]
 [ext_resource type="Script" path="res://scripts/Performance/DesaturationOverlay.cs" id="7_desat"]
 [ext_resource type="Script" path="res://scripts/Performance/PerformanceHud.cs" id="8_hud"]
+[ext_resource type="Script" path="res://scripts/Boss/BossArena.cs" id="9_bossarena"]
+[ext_resource type="Script" path="res://scripts/Boss/Boss.cs" id="10_boss"]
+[ext_resource type="Script" path="res://scripts/Boss/BossHud.cs" id="11_bosshud"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_desat"]
 shader = ExtResource("6_desat_sh")
@@ -28,6 +31,9 @@ size = Vector2(14, 16)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_tar"]
 size = Vector2(80, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bossarena"]
+size = Vector2(40, 96)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("0_game")
@@ -84,6 +90,26 @@ offset_right = 7.0
 offset_bottom = 7.0
 color = Color(0.86, 0.28, 0.3, 1)
 
+[node name="BossArena" type="Area2D" parent="." groups=["boss_arena"]]
+position = Vector2(560, 280)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("9_bossarena")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BossArena"]
+shape = SubResource("RectangleShape2D_bossarena")
+
+[node name="Choirbreaker" type="Node2D" parent="."]
+position = Vector2(560, 296)
+script = ExtResource("10_boss")
+
+[node name="Box" type="ColorRect" parent="Choirbreaker"]
+offset_left = -16.0
+offset_top = -28.0
+offset_right = 16.0
+offset_bottom = 4.0
+color = Color(0.42, 0.13, 0.55, 1)
+
 [node name="Player" type="CharacterBody2D" parent="."]
 position = Vector2(160, 240)
 floor_snap_length = 8.0
@@ -138,6 +164,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("8_hud")
 
+[node name="BossDuel" type="CanvasLayer" parent="."]
+layer = 4
+
+[node name="Highway" type="Control" parent="BossDuel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("11_bosshud")
+
 [node name="Hud" type="CanvasLayer" parent="."]
 
 [node name="Hint" type="Label" parent="Hud"]
@@ -145,4 +180,4 @@ offset_left = 8.0
 offset_top = 8.0
 offset_right = 620.0
 offset_bottom = 28.0
-text = "Strum move · Green jump · Red sprint · Yellow swing · whammy crouch/slide · tilt super-jump · Blue: cast Kindle (strum+fret the chart) · tar: alt-strum · Esc Options"
+text = "Strum move · Green jump · Red sprint · Yellow swing · whammy crouch/slide · tilt super-jump · Blue: cast Kindle (strum+fret the chart) · tar: alt-strum · walk right: Rock Off the Choirbreaker · Esc Options"
