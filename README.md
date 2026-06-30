@@ -8,22 +8,36 @@ A single-player 2D platformer played entirely on a 5-fret guitar controller.
 
 ## Milestone status
 
-**M0 — Scaffold (this commit).** A Godot 4 C# project that opens and runs, repo
-layout, formatter/lint config, a `Tunables` resource as the single home for
-gameplay numbers, a gdUnit4 test harness, and a hello-world scene: a
-`CharacterBody2D` box on a real `TileMapLayer` with collision, moved by the
-keyboard, proving collision + fixed-step (`_PhysicsProcess`, 60 Hz) movement.
+**M1 — Input + Options (this commit).** The data-driven guitar input layer and
+the Options screen that houses both control remapping and A/V latency
+calibration — the project's #1 de-risk item (SPEC §10, §11, §12).
 
-The remappable, data-driven guitar input layer lands in **M1**.
+- **Pure, Godot-free input core** (`scripts/Controls/`, namespace
+  `WixxTheBard.Controls`): verbs → bindings resolution, press-to-bind capture
+  with **axis rest/direction auto-detect**, common-controller presets as data,
+  robust latency-offset math, and JSON persistence. All unit-tested under plain
+  `dotnet test`.
+- **`GuitarInput` autoload**: polls the joypad's *raw* button/axis state each
+  fixed tick, resolves it against the active bindings, and exposes verbs (never
+  indices) to gameplay. Keyboard fallback OR'd in for dev.
+- **Options screen** (`scenes/Options.tscn`): per-verb rebind, preset picker, a
+  live input monitor (every verb lights when engaged), and a tap-the-metronome
+  A/V calibration. Opened with **Esc** from the hello-world scene; the box now
+  moves through the new input layer.
+
+**M0 — Scaffold.** Godot 4 C# project, repo layout, formatter/lint, the
+`Tunables` resource, gdUnit4 harness, and a `CharacterBody2D` box on a real
+`TileMapLayer` proving collision + fixed-step (`_PhysicsProcess`, 60 Hz) movement.
 
 ## Repo layout
 
 ```
-scenes/    Godot scenes (Main.tscn — the hello-world level)
-scripts/   C# gameplay scripts (Player, LevelGeometry)
-config/    Tunables.cs + Tunables.tres — the single source of gameplay numbers
-tests/     gdUnit4 C# tests
-reference/ READ-ONLY validated GDScript prototype (WixxMovement.gd)
+scenes/           Godot scenes (Main.tscn, Options.tscn)
+scripts/          C# gameplay scripts (Game, Player, LevelGeometry, GuitarInput, OptionsScreen)
+scripts/Controls/ Pure, Godot-free input core (bindings, capture, presets, calibration) — unit-tested
+config/           Tunables.cs + Tunables.tres — the single source of gameplay numbers
+tests/            gdUnit4 C# tests
+reference/        READ-ONLY validated GDScript prototype (WixxMovement.gd)
 ```
 
 ## Prerequisites
@@ -64,9 +78,12 @@ Or run the main scene directly:
 "$GODOT_BIN" --path . scenes/Main.tscn
 ```
 
-**Controls (M0 keyboard placeholder):** `←` / `→` move, `Space` jump. The box
-falls under gravity, lands on the floor, collides with the side walls and the
-ledge.
+**Controls.** With a guitar plugged in, the bound strum moves the box and Green
+jumps (default = the validated Ardwiino map; remap anything in Options). Keyboard
+fallback for dev: `←` / `→` move, `Space` jump, `Shift` sprint, `J` swing,
+`K`/`L` specials, `↓` crouch, `X` super-jump (the last five light the Options
+live monitor but aren't yet wired to movement — that's M2/M3). Press **Esc** to
+open Options (remapping + A/V calibration).
 
 ## Test
 
