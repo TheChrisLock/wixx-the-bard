@@ -1,6 +1,7 @@
 using Godot;
 using WixxTheBard.Controls;
 using WixxTheBard.Movement;
+using WixxTheBard.Performance;
 using WixxTheBard.Verbs;
 
 namespace WixxTheBard;
@@ -147,6 +148,26 @@ public partial class Tunables : Resource
     /// <summary>Ticks the breach leap floats uncut so it clears the pit (reference TAR_LAUNCH_FRAMES = 14; rule 4).</summary>
     [Export] public int TarExitLaunchTicks { get; set; } = 14;
 
+    [ExportGroup("Spell performance — rhythm (M4; calibration-relative, rule 6)")]
+
+    /// <summary>±ms of calibration-relative error that scores a Perfect note (SPEC §5.2).</summary>
+    [Export] public double PerfectWindowMs { get; set; } = 45.0;
+
+    /// <summary>±ms that scores a Good; beyond this a strike is a stray and a note auto-misses.</summary>
+    [Export] public double GoodWindowMs { get; set; } = 95.0;
+
+    /// <summary>Fraction of notes (hits / total) the player must land for the spell to fire (SPEC §5.4).</summary>
+    [Export] public double PerformanceSuccessThreshold { get; set; } = 0.6;
+
+    /// <summary>World time scale while a spell performs — enemies/hazards creep (SPEC §5.2). 1 = normal.</summary>
+    [Export] public float PerformanceTimeSlowFactor { get; set; } = 0.15f;
+
+    /// <summary>Cooldown ticks the spell recharges after a performance — success or fail (SPEC §5.4).</summary>
+    [Export] public int SpellCooldownTicks { get; set; } = 150;
+
+    /// <summary>Ticks the success/fail result banner stays up after a performance.</summary>
+    [Export] public int PerformanceResultBannerTicks { get; set; } = 120;
+
     [ExportGroup("A/V Calibration (M1)")]
 
     /// <summary>Default latency offset (ms) until the player calibrates.</summary>
@@ -190,6 +211,15 @@ public partial class Tunables : Resource
         TarExitJumpVelocity,
         TarExitForwardVelocity,
         TarExitLaunchTicks);
+
+    /// <summary>Build the Godot-free <see cref="PerformanceTunables"/> the pure rhythm logic reads.</summary>
+    public PerformanceTunables BuildPerformanceTunables() => new(
+        PerfectWindowMs,
+        GoodWindowMs,
+        PerformanceSuccessThreshold,
+        PerformanceTimeSlowFactor,
+        SpellCooldownTicks,
+        PerformanceResultBannerTicks);
 
     /// <summary>Build the Godot-free <see cref="MovementTunables"/> the pure movement core reads.</summary>
     public MovementTunables BuildMovementTunables() => new(

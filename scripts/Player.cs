@@ -1,6 +1,7 @@
 using Godot;
 using WixxTheBard.Controls;
 using WixxTheBard.Movement;
+using WixxTheBard.Performance;
 using WixxTheBard.Verbs;
 
 namespace WixxTheBard;
@@ -28,15 +29,25 @@ public partial class Player : CharacterBody2D
     private readonly SlideController _slide = new();
     private readonly TarState _tar = new();
     private readonly Cooldown _contactInvuln = new();
+    private readonly SpellPerformance _performance = new();
+    private readonly Cooldown _spellCooldown = new();
 
     private MovementTunables _moveTunables = null!;
     private VerbTunables _verbTunables = null!;
     private TarTunables _tarTunables = null!;
+    private PerformanceTunables _perfTunables = null!;
+    private NoteChart _spellChart = null!;
     private float _ticksPerSecond;
+    private double _msPerTick;
 
     // Authoritative verb state visuals read (rule 7).
     private bool _crouching;
     private bool _sliding;
+
+    // Spell-performance state (M4): the world-slow budget and the result banner hold.
+    private double _worldTickBudget;
+    private PerformanceResult _lastResult;
+    private int _resultBannerTicks;
 
     // Scene wiring (combat areas + the shape that shrinks on a crouch).
     private CollisionShape2D _bodyShape = null!;
@@ -59,7 +70,14 @@ public partial class Player : CharacterBody2D
         _moveTunables = Tunables.BuildMovementTunables();
         _verbTunables = Tunables.BuildVerbTunables();
         _tarTunables = Tunables.BuildTarTunables();
+        _perfTunables = Tunables.BuildPerformanceTunables();
+        _spellChart = SpellCharts.Kindle();
         _ticksPerSecond = (float)Engine.PhysicsTicksPerSecond;
+        _msPerTick = 1000.0 / Engine.PhysicsTicksPerSecond;
+
+        // The HUD highway and desaturation overlay locate Wixx by group (rule 7 — they
+        // observe this authoritative state, never drive it).
+        AddToGroup("player");
 
         _bodyShape = GetNode<CollisionShape2D>("CollisionShape2D");
         if (_bodyShape.Shape is RectangleShape2D rect)
@@ -80,6 +98,26 @@ public partial class Player : CharacterBody2D
         }
     }
 
+    // ---- Spell-performance state the HUD / desaturation overlay read (rule 7) ----
+
+    /// <summary>True while a spell performance is on screen (SPEC §5.2).</summary>
+    public bool IsPerforming => _performance.IsActive;
+
+    /// <summary>The authoritative performance state machine the highway HUD draws from.</summary>
+    public SpellPerformance Performance => _performance;
+
+    /// <summary>Lute-glow recharge in [0,1] after a performance — 1 = the spell is ready (SPEC §5.4).</summary>
+    public float SpellChargeFraction => _spellCooldown.Fraction(_perfTunables.SpellCooldownTicks);
+
+    /// <summary>True while the success/fail banner should show after a performance.</summary>
+    public bool ShowingResult => _resultBannerTicks > 0;
+
+    /// <summary>The most recent performance tally — valid while <see cref="ShowingResult"/> (SPEC §5.4).</summary>
+    public PerformanceResult LastResult => _lastResult;
+
+    /// <summary>The equipped ability's name, for the HUD (SPEC §7).</summary>
+    public string SpellName => _spellChart?.Name ?? string.Empty;
+
     public override void _PhysicsProcess(double delta)
     {
         var input = GuitarInput.Instance;
@@ -87,6 +125,18 @@ public partial class Player : CharacterBody2D
         // Cooldowns advance every tick regardless of mode.
         _superJump.Tick();
         _contactInvuln.Tick();
+        _spellCooldown.Tick();
+        if (_resultBannerTicks > 0)
+        {
+            _resultBannerTicks--;
+        }
+
+        // Spell performance owns the strum while active (rule 5) — movement is suspended.
+        if (_performance.IsActive)
+        {
+            PhysicsTickPerformance(input);
+            return;
+        }
 
         if (_tar.Submerged)
         {
@@ -95,6 +145,21 @@ public partial class Player : CharacterBody2D
         }
 
         bool onFloor = IsOnFloor();
+
+        // --- Spell trigger (Blue / Special1, SPEC §5.1): grounded + off-cooldown drops
+        //     the world into the performance. The strum becomes "play" mode for the
+        //     duration (rule 5); Wixx settles and is handed to the rhythm loop. ---
+        if ((input?.JustPressed(GuitarVerb.Special1) ?? false) && onFloor && _spellCooldown.IsReady)
+        {
+            _performance.Begin(_spellChart, input?.LatencyOffsetMs ?? 0.0, _perfTunables);
+            _core.ZeroVelocity();
+            _crouching = false;
+            _sliding = false;
+            _worldTickBudget = 0.0;
+            ApplyCrouchShape(false);
+            Velocity = Vector2.Zero;
+            return;
+        }
 
         // --- Whammy crouch / slide (resolved before the core tick: the slide latch
         //     reads last tick's speed and feeds the core, which then decays it). A
@@ -128,6 +193,101 @@ public partial class Player : CharacterBody2D
         MoveAndSlide();
 
         ResolveCombat();
+    }
+
+    /// <summary>
+    /// A tick of the spell performance (SPEC §5.2). The note clock advances at real
+    /// time so the song keeps tempo and input stays 60 Hz-sampled (rule 3); the strum
+    /// is consumed here as a strike and the held fret picks the lane — read through
+    /// data-driven verbs only (rule 2) and as the sole strum consumer (rule 5). The
+    /// world creeps on the <see cref="PerformanceTunables.TimeSlowFactor"/> budget
+    /// (SPEC §5.2 global slow), which any world entity reads (rule 7).
+    /// </summary>
+    private void PhysicsTickPerformance(GuitarInput? input)
+    {
+        bool strumEdge =
+            (input?.JustPressed(GuitarVerb.MoveLeft) ?? false) ||
+            (input?.JustPressed(GuitarVerb.MoveRight) ?? false);
+        NoteLane heldLane = ResolveHeldLane(input);
+
+        PerformanceTick tick = _performance.Tick(_msPerTick, strumEdge, heldLane);
+
+        // Wixx's own physics advance on the slowed budget — he hangs in slow motion,
+        // the visible side of the global time-slow. No directional/jump input flows in
+        // (the strum is "play" mode), so he just settles and falls slowly.
+        _worldTickBudget += _perfTunables.TimeSlowFactor;
+        if (_worldTickBudget >= 1.0)
+        {
+            _worldTickBudget -= 1.0;
+            _core.Tick(BuildInput(null, IsOnFloor(), crouching: false, sliding: false), _moveTunables);
+            Velocity = new Vector2(_core.VelocityX, _core.VelocityY) * _ticksPerSecond;
+            MoveAndSlide();
+        }
+        else
+        {
+            Velocity = Vector2.Zero;
+        }
+
+        if (tick.Completed)
+        {
+            ResolvePerformance(tick.Result);
+        }
+    }
+
+    /// <summary>
+    /// Resolve a finished performance (SPEC §5.4): the spell cooldown begins whether the
+    /// player succeeded or failed; only a success fires the spell. A perfect run flags
+    /// the empowered stretch tier for the banner (§5.4) — the bigger AoE is phase-2.
+    /// </summary>
+    private void ResolvePerformance(PerformanceResult result)
+    {
+        _spellCooldown.Start(_perfTunables.SpellCooldownTicks);
+        _lastResult = result;
+        _resultBannerTicks = _perfTunables.ResultBannerTicks;
+        if (result.Success)
+        {
+            FireSpell();
+        }
+
+        _worldTickBudget = 0.0;
+        ApplyCrouchShape(false);
+    }
+
+    /// <summary>
+    /// The spell's effect — grey-box (art deferred post-M6, SPEC §8): a chord-blast that
+    /// dispatches the enemies on screen. Enough to show "success fires" for the slice.
+    /// </summary>
+    private void FireSpell()
+    {
+        foreach (Node node in GetTree().GetNodesInGroup("enemies"))
+        {
+            if (node is Enemy enemy)
+            {
+                enemy.Defeat();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Which fret lane is currently held, read through the data-driven verbs (rule 2).
+    /// Lane order resolves ties; tier-1 single-note charts hold one fret at a time.
+    /// </summary>
+    private static NoteLane ResolveHeldLane(GuitarInput? input)
+    {
+        if (input == null)
+        {
+            return NoteLane.None;
+        }
+
+        foreach (NoteLane lane in NoteLanes.All)
+        {
+            if (input.IsPressed(NoteLanes.ToVerb(lane)))
+            {
+                return lane;
+            }
+        }
+
+        return NoteLane.None;
     }
 
     /// <summary>
@@ -305,6 +465,7 @@ public partial class Player : CharacterBody2D
 
         // Visuals read gameplay state, never drive it (rule 7).
         Color tint =
+            _performance.IsActive ? new Color("c84bd6") :
             _tar.Submerged ? new Color("6b4a1c") :
             _sliding ? new Color("4de1ff") :
             crouching ? new Color("2f6fb0") :

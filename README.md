@@ -8,7 +8,40 @@ A single-player 2D platformer played entirely on a 5-fret guitar controller.
 
 ## Milestone status
 
-**M3 — The verbs (this commit).** The full instrument's gameplay verbs on top of
+**M4 — Spell performance (this commit).** One ability end-to-end (SPEC §5): trigger →
+global time-slow + desaturation → right-to-left note chart (calibration-relative) →
+success fires the spell + cooldown / fail = cooldown only.
+
+- **Pure, Godot-free rhythm core** (`scripts/Performance/`, namespace
+  `WixxTheBard.Performance`), all unit-tested under plain `dotnet test`:
+  - **`PerformanceJudge`** — the rhythm-window math. Classifies each strum into
+    Perfect / Good / Miss / Stray, picks the nearest open note in the strummed lane,
+    and auto-misses notes whose window elapses. **Timing is calibration-relative
+    (rule 6):** every verdict is measured against the player's stored A/V latency
+    offset, never raw clock time (a consistently-late player with a matching offset
+    judges dead-on).
+  - **`SpellPerformance`** — the trigger→play→resolve state machine. The note clock
+    runs at **real time** so the song keeps tempo and input stays 60 Hz-sampled
+    (rule 3); the performance completes a Good-window after the last note and reports
+    a success/fail/perfect `PerformanceResult` (SPEC §5.4).
+  - **`NoteChart` + `SpellCharts.Kindle`** — the one shipped ability is a fixed
+    tier-1 single-note song (SPEC §5.2/§5.3). Note times are **content**, not
+    feel-tunables; the windows / success threshold / slow factor / cooldown are.
+- **`Player`** triggers on **Blue (Special1)** when grounded and off-cooldown, then
+  owns the strum as the sole "play" consumer (rule 5): a strum (either direction) is
+  a strike and the held fret picks the lane — all read through data-driven **verbs**,
+  never raw indices (rule 2). On completion the spell cooldown always starts; success
+  fires a grey-box chord-blast. The world creeps on a published `TimeSlowFactor`
+  budget (SPEC §5.2 global slow) — deliberately not via `Engine.TimeScale`, which
+  would starve the fixed-tick rhythm input.
+- **Presentation reads state, never drives it (rule 7):** `PerformanceHud` draws the
+  right→left highway + strike zone + result banner; `DesaturationOverlay` +
+  `Desaturate.gdshader` grey the world while the chart is up, leaving the highway
+  vivid. Both observe the authoritative `Player` performance state.
+- **`Tunables`** carries every M4 number (Perfect/Good windows, success threshold,
+  time-slow factor, spell cooldown, banner hold) — no magic numbers in gameplay code.
+
+**M3 — The verbs.** The full instrument's gameplay verbs on top of
 M2 movement (SPEC §2.3/§2.4/§4.4), each as pure Godot-free logic the node reads:
 
 - **Pure verb logic** (`scripts/Verbs/`, namespace `WixxTheBard.Verbs`), all
