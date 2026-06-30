@@ -8,7 +8,23 @@ A single-player 2D platformer played entirely on a 5-fret guitar controller.
 
 ## Milestone status
 
-**M1 — Input + Options (this commit).** The data-driven guitar input layer and
+**M2 — Core movement (this commit).** Wixx's real `CharacterBody2D` movement,
+porting the validated `/reference` feel onto real collision and the data-driven
+input layer (SPEC §2.2, §2.3, §14).
+
+- **Pure, Godot-free movement core** (`scripts/Movement/`, namespace
+  `WixxTheBard.Movement`): the Hold scheme (Scheme B), sprint-charge → max-speed,
+  the variable-height jump, and — baked into the physics contract — the
+  **forced-launch jump-cut exemption** (CLAUDE.md rule 4) that M3's super-jump and
+  tar-exit leap will use. All constants are per-60 Hz-tick, ported 1:1 from
+  `/reference`; all unit-tested under plain `dotnet test`.
+- **`Player`** drives the core from `GuitarInput` verbs (never raw indices),
+  entirely in `_PhysicsProcess` at the fixed 60 Hz tick, scaling per-tick velocity
+  to px/second for `MoveAndSlide` against the real `TileMapLayer`.
+- **`Tunables`** now carries the ported movement/gravity numbers (the single
+  source of truth — no magic numbers in gameplay code).
+
+**M1 — Input + Options.** The data-driven guitar input layer and
 the Options screen that houses both control remapping and A/V latency
 calibration — the project's #1 de-risk item (SPEC §10, §11, §12).
 
@@ -35,6 +51,7 @@ calibration — the project's #1 de-risk item (SPEC §10, §11, §12).
 scenes/           Godot scenes (Main.tscn, Options.tscn)
 scripts/          C# gameplay scripts (Game, Player, LevelGeometry, GuitarInput, OptionsScreen)
 scripts/Controls/ Pure, Godot-free input core (bindings, capture, presets, calibration) — unit-tested
+scripts/Movement/ Pure, Godot-free movement core (Hold scheme, jump, sprint, rule-4 launch) — unit-tested
 config/           Tunables.cs + Tunables.tres — the single source of gameplay numbers
 tests/            gdUnit4 C# tests
 reference/        READ-ONLY validated GDScript prototype (WixxMovement.gd)

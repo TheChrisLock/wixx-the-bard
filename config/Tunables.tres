@@ -4,12 +4,17 @@
 
 [resource]
 script = ExtResource("1_tun")
-MoveSpeed = 160.0
-Acceleration = 1200.0
-Friction = 1400.0
-Gravity = 980.0
-MaxFallSpeed = 600.0
-JumpVelocity = 360.0
+MoveAccel = 0.9
+MaxSpeed = 4.2
+FrictionHold = 0.78
+SprintMaxMultiplier = 1.9
+SprintChargeRate = 0.03
+SprintDecayRate = 0.05
+Gravity = 0.8
+TerminalFallSpeed = 15.0
+JumpVelocity = 13.0
+JumpCutFactor = 0.85
+RisingGravityFactor = 0.6
 AxisEngageThreshold = 0.35
 AxisCaptureThreshold = 0.5
 AxisFullDeflection = 1.0
