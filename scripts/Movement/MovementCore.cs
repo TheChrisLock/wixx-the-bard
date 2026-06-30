@@ -51,6 +51,33 @@ public sealed class MovementCore
         LaunchFrames = frames;
     }
 
+    /// <summary>
+    /// Zero linear velocity without disturbing facing/sprint/launch — used when Wixx
+    /// is handed to an external driver for a tick (e.g. the tar struggle suspends
+    /// <c>MoveAndSlide</c> and positions him from the authoritative tar depth).
+    /// </summary>
+    public void ZeroVelocity()
+    {
+        VelocityX = 0f;
+        VelocityY = 0f;
+        LaunchFrames = 0;
+    }
+
+    /// <summary>
+    /// Set horizontal velocity directly — the forward carry of the tar-exit leap
+    /// (SPEC §4.4) or an enemy-contact knockback. The vertical launch of the breach
+    /// leap goes through <see cref="ForcedLaunch"/> so it stays exempt from the cut
+    /// (rule 4); this only supplies the sideways component.
+    /// </summary>
+    public void ApplyHorizontalImpulse(float velocityX, int facing)
+    {
+        VelocityX = velocityX;
+        if (facing != 0)
+        {
+            Facing = facing;
+        }
+    }
+
     /// <summary>Reset all motion state (respawn / scene reset).</summary>
     public void Reset()
     {

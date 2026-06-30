@@ -1,6 +1,7 @@
 using Godot;
 using WixxTheBard.Controls;
 using WixxTheBard.Movement;
+using WixxTheBard.Verbs;
 
 namespace WixxTheBard;
 
@@ -76,6 +77,65 @@ public partial class Tunables : Resource
     /// <summary>Raw joypad axes to scan (whammy/tilt land on arbitrary axes).</summary>
     [Export] public int AxisScanCount { get; set; } = 10;
 
+    [ExportGroup("Verbs — Lute swing & enemies (M3; per 60 Hz tick)")]
+
+    /// <summary>Ticks the lute-swing hitbox stays live after a Yellow press (reference attack_timer = 12).</summary>
+    [Export] public int SwingActiveTicks { get; set; } = 12;
+
+    /// <summary>Horizontal speed (px/tick) an enemy contact pushes Wixx back — light feedback, not a damage system.</summary>
+    [Export] public float EnemyKnockbackSpeed { get; set; } = 3.0f;
+
+    /// <summary>Ticks of contact-immunity after a knockback so one touch can't repeat-stunlock.</summary>
+    [Export] public int ContactInvulnTicks { get; set; } = 30;
+
+    [ExportGroup("Verbs — Tilt super-jump (M3; per 60 Hz tick; ported from /reference)")]
+
+    /// <summary>Upward launch speed of the super-jump in px/tick (reference SUPER_JUMP_V = 21, ~5× a normal jump).</summary>
+    [Export] public float SuperJumpVelocity { get; set; } = 21.0f;
+
+    /// <summary>Ticks the super-jump floats uncut so it reaches full height (reference SUPER_LAUNCH = 50; rule 4).</summary>
+    [Export] public int SuperJumpLaunchTicks { get; set; } = 50;
+
+    /// <summary>Cooldown ticks before the super-jump can fire again (reference SUPER_CD = 90, ~1.5 s @ 60 Hz).</summary>
+    [Export] public int SuperJumpCooldownTicks { get; set; } = 90;
+
+    [ExportGroup("Verbs — Whammy crouch/slide (M3; per 60 Hz tick)")]
+
+    /// <summary>Horizontal speed (px/tick) a crouch must carry to become a slide (reference 1.5).</summary>
+    [Export] public float SlideSpeedThreshold { get; set; } = 1.5f;
+
+    /// <summary>Crouch collision height as a fraction of standing height — how low a slide ducks (reference ~0.5).</summary>
+    [Export] public float CrouchHeightFactor { get; set; } = 0.5f;
+
+    [ExportGroup("Tar / quicksand hazard (M3; per 60 Hz tick; ported from /reference)")]
+
+    /// <summary>Constant downward pull each tick, in px (reference TAR_SINK = 0.55).</summary>
+    [Export] public float TarSinkPerTick { get; set; } = 0.55f;
+
+    /// <summary>Depth (px) a clean alternating strum climbs (reference TAR_KICK_RISE = 7).</summary>
+    [Export] public float TarKickRise { get; set; } = 7.0f;
+
+    /// <summary>Fraction of <see cref="TarKickRise"/> a same-direction strum earns — mashing one way barely helps (reference 0.15).</summary>
+    [Export] public float TarWeakKickFactor { get; set; } = 0.15f;
+
+    /// <summary>Forward nudge (px) per clean alternating strum (reference TAR_KICK_FWD = 8).</summary>
+    [Export] public float TarKickForward { get; set; } = 8.0f;
+
+    /// <summary>Depth (px) at which full submersion kills (reference TAR_DEATH = 58).</summary>
+    [Export] public float TarDeathDepth { get; set; } = 58.0f;
+
+    /// <summary>Depth (px) Wixx plunges to on contact — must exceed a couple of kicks (reference TAR_ENTRY_DEPTH = 26).</summary>
+    [Export] public float TarEntryDepth { get; set; } = 26.0f;
+
+    /// <summary>Upward launch speed (px/tick) of the surface-breach leap (reference TAR_EXIT_JUMP = 12).</summary>
+    [Export] public float TarExitJumpVelocity { get; set; } = 12.0f;
+
+    /// <summary>Forward launch speed (px/tick) carried out of the pit on breach (reference TAR_EXIT_FWD = 4).</summary>
+    [Export] public float TarExitForwardVelocity { get; set; } = 4.0f;
+
+    /// <summary>Ticks the breach leap floats uncut so it clears the pit (reference TAR_LAUNCH_FRAMES = 14; rule 4).</summary>
+    [Export] public int TarExitLaunchTicks { get; set; } = 14;
+
     [ExportGroup("A/V Calibration (M1)")]
 
     /// <summary>Default latency offset (ms) until the player calibrates.</summary>
@@ -95,6 +155,29 @@ public partial class Tunables : Resource
         BindingBaselineSamples,
         ButtonScanCount,
         AxisScanCount);
+
+    /// <summary>Build the Godot-free <see cref="VerbTunables"/> the M3 verb logic reads.</summary>
+    public VerbTunables BuildVerbTunables() => new(
+        SwingActiveTicks,
+        SuperJumpVelocity,
+        SuperJumpLaunchTicks,
+        SuperJumpCooldownTicks,
+        SlideSpeedThreshold,
+        CrouchHeightFactor,
+        EnemyKnockbackSpeed,
+        ContactInvulnTicks);
+
+    /// <summary>Build the Godot-free <see cref="TarTunables"/> the pure tar state machine reads.</summary>
+    public TarTunables BuildTarTunables() => new(
+        TarSinkPerTick,
+        TarKickRise,
+        TarWeakKickFactor,
+        TarKickForward,
+        TarDeathDepth,
+        TarEntryDepth,
+        TarExitJumpVelocity,
+        TarExitForwardVelocity,
+        TarExitLaunchTicks);
 
     /// <summary>Build the Godot-free <see cref="MovementTunables"/> the pure movement core reads.</summary>
     public MovementTunables BuildMovementTunables() => new(
