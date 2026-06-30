@@ -74,8 +74,10 @@ ledge.
 dotnet test
 ```
 
-Runs the gdUnit4 suite (requires `GODOT_BIN` set). Expect the two
-`TunablesTest` cases to pass.
+Runs the gdUnit4 suite. The M0 smoke test (`ScaffoldSmokeTest`) is Godot-free, so
+it passes under a plain `dotnet test` host. Tests that instantiate Godot types
+(`Resource`, nodes, etc.) must run inside the Godot runtime — set `GODOT_BIN` so
+the gdUnit4 adapter can host them; those land in M1.
 
 ## Format / lint
 
