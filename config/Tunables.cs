@@ -101,8 +101,15 @@ public partial class Tunables : Resource
 
     [ExportGroup("Verbs — Whammy crouch/slide (M3; per 60 Hz tick)")]
 
-    /// <summary>Horizontal speed (px/tick) a crouch must carry to become a slide (reference 1.5).</summary>
+    /// <summary>Horizontal speed (px/tick) a crouch must carry to trigger a slide (reference 1.5).</summary>
     [Export] public float SlideSpeedThreshold { get; set; } = 1.5f;
+
+    /// <summary>Speed (px/tick) at or below which a committed slide ends and Wixx settles into a crouch.</summary>
+    [Export] public float SlideStopSpeed { get; set; } = 0.5f;
+
+    /// <summary>Per-tick horizontal decay during a committed slide — a slower bleed than <see cref="FrictionHold"/>
+    /// so the slide glides a short distance before stopping, even with the strum held.</summary>
+    [Export] public float SlideFriction { get; set; } = 0.92f;
 
     /// <summary>Crouch collision height as a fraction of standing height — how low a slide ducks (reference ~0.5).</summary>
     [Export] public float CrouchHeightFactor { get; set; } = 0.5f;
@@ -163,6 +170,7 @@ public partial class Tunables : Resource
         SuperJumpLaunchTicks,
         SuperJumpCooldownTicks,
         SlideSpeedThreshold,
+        SlideStopSpeed,
         CrouchHeightFactor,
         EnemyKnockbackSpeed,
         ContactInvulnTicks);
@@ -191,5 +199,6 @@ public partial class Tunables : Resource
         TerminalFallSpeed,
         JumpVelocity,
         JumpCutFactor,
-        RisingGravityFactor);
+        RisingGravityFactor,
+        SlideFriction);
 }

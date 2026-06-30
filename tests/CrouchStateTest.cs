@@ -17,6 +17,7 @@ public class CrouchStateTest
         superJumpLaunchTicks: 50,
         superJumpCooldownTicks: 90,
         slideSpeedThreshold: 1.5f,
+        slideStopSpeed: 0.5f,
         crouchHeightFactor: 0.5f,
         enemyKnockbackSpeed: 3f,
         contactInvulnTicks: 30);

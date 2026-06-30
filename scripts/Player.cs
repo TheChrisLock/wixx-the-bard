@@ -25,6 +25,7 @@ public partial class Player : CharacterBody2D
     private readonly MovementCore _core = new();
     private readonly SwingController _swing = new();
     private readonly SuperJumpController _superJump = new();
+    private readonly SlideController _slide = new();
     private readonly TarState _tar = new();
     private readonly Cooldown _contactInvuln = new();
 
@@ -34,7 +35,8 @@ public partial class Player : CharacterBody2D
     private float _ticksPerSecond;
 
     // Authoritative verb state visuals read (rule 7).
-    private CrouchState _crouch;
+    private bool _crouching;
+    private bool _sliding;
 
     // Scene wiring (combat areas + the shape that shrinks on a crouch).
     private CollisionShape2D _bodyShape = null!;
@@ -94,6 +96,14 @@ public partial class Player : CharacterBody2D
 
         bool onFloor = IsOnFloor();
 
+        // --- Whammy crouch / slide (resolved before the core tick: the slide latch
+        //     reads last tick's speed and feeds the core, which then decays it). A
+        //     committed slide glides to a stop on SlideFriction even with the strum
+        //     held; a settled crouch ducks in place. ---
+        bool crouchEngaged = input?.IsPressed(GuitarVerb.Crouch) ?? false;
+        _crouching = CrouchState.Evaluate(crouchEngaged, onFloor, _core.VelocityX, _verbTunables).Crouching;
+        _sliding = _slide.Tick(crouchEngaged, onFloor, _core.VelocityX, _verbTunables);
+
         // --- Lute swing (Yellow): opens a short active hitbox window. ---
         _swing.Tick(
             input?.JustPressed(GuitarVerb.Swing) ?? false,
@@ -101,8 +111,8 @@ public partial class Player : CharacterBody2D
             suppressed: false,
             _verbTunables);
 
-        // --- Core movement (Hold scheme, variable jump, sprint). ---
-        _core.Tick(BuildInput(input, onFloor), _moveTunables);
+        // --- Core movement (Hold scheme, variable jump, sprint; crouch/slide override). ---
+        _core.Tick(BuildInput(input, onFloor, _crouching, _sliding), _moveTunables);
 
         // --- Tilt super-jump: level-fire + cooldown + on-floor → forced (uncut) launch. ---
         bool tiltEngaged = input?.IsPressed(GuitarVerb.SuperJump) ?? false;
@@ -111,10 +121,7 @@ public partial class Player : CharacterBody2D
             _core.ForcedLaunch(_verbTunables.SuperJumpVelocity, _verbTunables.SuperJumpLaunchTicks);
         }
 
-        // --- Whammy crouch / slide (analog depth resolved upstream). ---
-        bool crouchEngaged = input?.IsPressed(GuitarVerb.Crouch) ?? false;
-        _crouch = CrouchState.Evaluate(crouchEngaged, onFloor, _core.VelocityX, _verbTunables);
-        ApplyCrouchShape(_crouch.Crouching);
+        ApplyCrouchShape(_crouching);
 
         // Core works in px/tick; MoveAndSlide integrates px/second * delta (60 Hz → 1:1).
         Velocity = new Vector2(_core.VelocityX, _core.VelocityY) * _ticksPerSecond;
@@ -138,6 +145,8 @@ public partial class Player : CharacterBody2D
 
         GlobalPosition = new Vector2(GlobalPosition.X + step.ForwardStep, _tarSurfaceY + step.Depth);
         Velocity = Vector2.Zero;
+        _crouching = false;
+        _sliding = false;
         ApplyCrouchShape(false);
 
         switch (step.Outcome)
@@ -184,6 +193,7 @@ public partial class Player : CharacterBody2D
 
         int facing = _core.VelocityX >= 0f ? 1 : -1;
         _core.ZeroVelocity();
+        _slide.Reset();
         _tar.Enter(facing, _tarTunables);
         GlobalPosition = new Vector2(GlobalPosition.X, surfaceY + _tar.Depth);
         Velocity = Vector2.Zero;
@@ -213,6 +223,7 @@ public partial class Player : CharacterBody2D
         _core.Reset();
         _swing.Reset();
         _superJump.Reset();
+        _slide.Reset();
         _contactInvuln.Reset();
         GlobalPosition = new Vector2(x, _tarSurfaceY);
         Velocity = Vector2.Zero;
@@ -249,7 +260,7 @@ public partial class Player : CharacterBody2D
                 continue;
             }
 
-            if (_crouch.Sliding)
+            if (_sliding)
             {
                 enemy.Defeat(); // slide knockdown (SPEC §2.4)
             }
@@ -295,7 +306,7 @@ public partial class Player : CharacterBody2D
         // Visuals read gameplay state, never drive it (rule 7).
         Color tint =
             _tar.Submerged ? new Color("6b4a1c") :
-            _crouch.Sliding ? new Color("4de1ff") :
+            _sliding ? new Color("4de1ff") :
             crouching ? new Color("2f6fb0") :
             !_superJump.IsReady ? new Color("2a4a6a") :
             new Color("3aa0ff");
@@ -313,11 +324,11 @@ public partial class Player : CharacterBody2D
         }
     }
 
-    private static MovementInput BuildInput(GuitarInput? input, bool onFloor)
+    private static MovementInput BuildInput(GuitarInput? input, bool onFloor, bool crouching, bool sliding)
     {
         if (input == null)
         {
-            return new MovementInput(false, false, false, false, false, onFloor);
+            return new MovementInput(false, false, false, false, false, onFloor, crouching, sliding);
         }
 
         return new MovementInput(
@@ -326,6 +337,8 @@ public partial class Player : CharacterBody2D
             jumpHeld: input.IsPressed(GuitarVerb.Jump),
             jumpJustPressed: input.JustPressed(GuitarVerb.Jump),
             sprint: input.IsPressed(GuitarVerb.Sprint),
-            onFloor: onFloor);
+            onFloor: onFloor,
+            crouching: crouching,
+            sliding: sliding);
     }
 }

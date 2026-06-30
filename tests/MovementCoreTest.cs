@@ -25,7 +25,8 @@ public class MovementCoreTest
         terminalFallSpeed: 15.0f,
         jumpVelocity: 13.0f,
         jumpCutFactor: 0.85f,
-        risingGravityFactor: 0.6f);
+        risingGravityFactor: 0.6f,
+        slideFriction: 0.92f);
 
     private static MovementInput Hold(bool left, bool right, bool onFloor) =>
         new(left, right, jumpHeld: false, jumpJustPressed: false, sprint: false, onFloor: onFloor);

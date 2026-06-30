@@ -15,7 +15,9 @@ public readonly struct MovementInput
         bool jumpHeld,
         bool jumpJustPressed,
         bool sprint,
-        bool onFloor)
+        bool onFloor,
+        bool crouching = false,
+        bool sliding = false)
     {
         MoveLeft = moveLeft;
         MoveRight = moveRight;
@@ -23,6 +25,8 @@ public readonly struct MovementInput
         JumpJustPressed = jumpJustPressed;
         Sprint = sprint;
         OnFloor = onFloor;
+        Crouching = crouching;
+        Sliding = sliding;
     }
 
     /// <summary>Hold strum up (Scheme B) — drive left this tick.</summary>
@@ -42,4 +46,10 @@ public readonly struct MovementInput
 
     /// <summary>Grounded state from the previous <c>MoveAndSlide</c> (the Godot collision result).</summary>
     public bool OnFloor { get; }
+
+    /// <summary>Whammy held while grounded — ducking. Suppresses the Hold-scheme run so you stop to crouch.</summary>
+    public bool Crouching { get; }
+
+    /// <summary>A committed slide is in progress — decay via <c>SlideFriction</c> to a stop, ignoring held strum.</summary>
+    public bool Sliding { get; }
 }

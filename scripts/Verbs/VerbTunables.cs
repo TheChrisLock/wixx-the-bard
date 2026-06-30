@@ -20,6 +20,7 @@ public sealed class VerbTunables
         int superJumpLaunchTicks,
         int superJumpCooldownTicks,
         float slideSpeedThreshold,
+        float slideStopSpeed,
         float crouchHeightFactor,
         float enemyKnockbackSpeed,
         int contactInvulnTicks)
@@ -29,6 +30,7 @@ public sealed class VerbTunables
         SuperJumpLaunchTicks = superJumpLaunchTicks;
         SuperJumpCooldownTicks = superJumpCooldownTicks;
         SlideSpeedThreshold = slideSpeedThreshold;
+        SlideStopSpeed = slideStopSpeed;
         CrouchHeightFactor = crouchHeightFactor;
         EnemyKnockbackSpeed = enemyKnockbackSpeed;
         ContactInvulnTicks = contactInvulnTicks;
@@ -46,8 +48,11 @@ public sealed class VerbTunables
     /// <summary>Cooldown ticks before the super-jump can fire again (reference SUPER_CD = 90, ~1.5 s @ 60 Hz).</summary>
     public int SuperJumpCooldownTicks { get; }
 
-    /// <summary>Horizontal speed (px/tick) a crouch must carry to become a slide (reference 1.5).</summary>
+    /// <summary>Horizontal speed (px/tick) a crouch must carry to trigger a slide (reference 1.5).</summary>
     public float SlideSpeedThreshold { get; }
+
+    /// <summary>Horizontal speed (px/tick) at or below which a committed slide ends and Wixx settles into a crouch.</summary>
+    public float SlideStopSpeed { get; }
 
     /// <summary>Crouch collision height as a fraction of standing height — how low a slide ducks
     /// (reference body shrinks ~30→16, ~0.5).</summary>

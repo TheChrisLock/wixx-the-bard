@@ -97,9 +97,20 @@ public sealed class MovementCore
             : Math.Max(1f, SprintCharge - t.SprintDecayRate);
         float maxSpeed = t.MaxSpeed * SprintCharge;
 
-        // --- Horizontal (Hold / Scheme B): held direction accelerates, none decays. ---
+        // --- Horizontal (Hold / Scheme B): held direction accelerates, none decays.
+        //     Crouch/slide override the strum: a committed slide glides to a stop on
+        //     SlideFriction (a short distance, ignoring held strum), and a settled
+        //     crouch ducks in place (no running while ducked). ---
         int dir = (input.MoveRight ? 1 : 0) - (input.MoveLeft ? 1 : 0);
-        if (dir != 0)
+        if (input.Sliding)
+        {
+            VelocityX *= t.SlideFriction;
+        }
+        else if (input.Crouching)
+        {
+            VelocityX *= t.FrictionHold;
+        }
+        else if (dir != 0)
         {
             VelocityX += dir * t.MoveAccel;
             Facing = dir;
