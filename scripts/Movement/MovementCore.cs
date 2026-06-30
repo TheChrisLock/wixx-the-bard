@@ -51,6 +51,33 @@ public sealed class MovementCore
         LaunchFrames = frames;
     }
 
+    /// <summary>
+    /// Zero linear velocity without disturbing facing/sprint/launch — used when Wixx
+    /// is handed to an external driver for a tick (e.g. the tar struggle suspends
+    /// <c>MoveAndSlide</c> and positions him from the authoritative tar depth).
+    /// </summary>
+    public void ZeroVelocity()
+    {
+        VelocityX = 0f;
+        VelocityY = 0f;
+        LaunchFrames = 0;
+    }
+
+    /// <summary>
+    /// Set horizontal velocity directly — the forward carry of the tar-exit leap
+    /// (SPEC §4.4) or an enemy-contact knockback. The vertical launch of the breach
+    /// leap goes through <see cref="ForcedLaunch"/> so it stays exempt from the cut
+    /// (rule 4); this only supplies the sideways component.
+    /// </summary>
+    public void ApplyHorizontalImpulse(float velocityX, int facing)
+    {
+        VelocityX = velocityX;
+        if (facing != 0)
+        {
+            Facing = facing;
+        }
+    }
+
     /// <summary>Reset all motion state (respawn / scene reset).</summary>
     public void Reset()
     {
@@ -70,9 +97,16 @@ public sealed class MovementCore
             : Math.Max(1f, SprintCharge - t.SprintDecayRate);
         float maxSpeed = t.MaxSpeed * SprintCharge;
 
-        // --- Horizontal (Hold / Scheme B): held direction accelerates, none decays. ---
+        // --- Horizontal (Hold / Scheme B): held direction accelerates, none decays.
+        //     A committed slide overrides the strum and glides to a stop on
+        //     SlideFriction (a short distance, ignoring held direction). A crouch
+        //     still moves on a held direction, but is capped to a slow crouch-walk. ---
         int dir = (input.MoveRight ? 1 : 0) - (input.MoveLeft ? 1 : 0);
-        if (dir != 0)
+        if (input.Sliding)
+        {
+            VelocityX *= t.SlideFriction;
+        }
+        else if (dir != 0)
         {
             VelocityX += dir * t.MoveAccel;
             Facing = dir;
@@ -82,7 +116,10 @@ public sealed class MovementCore
             VelocityX *= t.FrictionHold;
         }
 
-        VelocityX = Math.Clamp(VelocityX, -maxSpeed, maxSpeed);
+        // Crouch-walk caps speed low (you shuffle while ducked, not run); a slide is
+        // exempt so it keeps the momentum it carried in.
+        float cap = (input.Crouching && !input.Sliding) ? t.CrouchWalkSpeed : maxSpeed;
+        VelocityX = Math.Clamp(VelocityX, -cap, cap);
 
         // --- Forced-launch timer (rule 4): count down before reading it below. ---
         if (LaunchFrames > 0)

@@ -1,18 +1,81 @@
-[gd_scene load_steps=6 format=3 uid="uid://b0wixxmain00000"]
+[gd_scene load_steps=12 format=3 uid="uid://b0wixxmain00000"]
 
 [ext_resource type="Script" path="res://scripts/Game.cs" id="0_game"]
 [ext_resource type="Script" path="res://scripts/LevelGeometry.cs" id="1_level"]
 [ext_resource type="Script" path="res://scripts/Player.cs" id="2_player"]
 [ext_resource type="Resource" path="res://config/Tunables.tres" id="3_tun"]
+[ext_resource type="Script" path="res://scripts/Enemy.cs" id="4_enemy"]
+[ext_resource type="Script" path="res://scripts/TarPit.cs" id="5_tar"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
 size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_swing"]
+size = Vector2(16, 22)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(14, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_enemy"]
+size = Vector2(14, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tar"]
+size = Vector2(80, 80)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("0_game")
 
 [node name="Level" type="TileMapLayer" parent="."]
 script = ExtResource("1_level")
+
+[node name="TarPit" type="Area2D" parent="." groups=["tar"]]
+position = Vector2(248, 352)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("5_tar")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TarPit"]
+shape = SubResource("RectangleShape2D_tar")
+
+[node name="Goo" type="ColorRect" parent="TarPit"]
+z_index = -1
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0.078, 0.125, 0.055, 0.92)
+
+[node name="Enemy1" type="CharacterBody2D" parent="." groups=["enemies"]]
+position = Vector2(180, 312)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("4_enemy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy1"]
+shape = SubResource("RectangleShape2D_enemy")
+
+[node name="Box" type="ColorRect" parent="Enemy1"]
+offset_left = -7.0
+offset_top = -7.0
+offset_right = 7.0
+offset_bottom = 7.0
+color = Color(0.86, 0.28, 0.3, 1)
+
+[node name="Enemy2" type="CharacterBody2D" parent="." groups=["enemies"]]
+position = Vector2(360, 312)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("4_enemy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy2"]
+shape = SubResource("RectangleShape2D_enemy")
+
+[node name="Box" type="ColorRect" parent="Enemy2"]
+offset_left = -7.0
+offset_top = -7.0
+offset_right = 7.0
+offset_bottom = 7.0
+color = Color(0.86, 0.28, 0.3, 1)
 
 [node name="Player" type="CharacterBody2D" parent="."]
 position = Vector2(160, 240)
@@ -30,11 +93,26 @@ offset_right = 8.0
 offset_bottom = 8.0
 color = Color(0.227451, 0.627451, 1, 1)
 
+[node name="BodyArea" type="Area2D" parent="Player"]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/BodyArea"]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="SwingArea" type="Area2D" parent="Player"]
+position = Vector2(12, -2)
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/SwingArea"]
+shape = SubResource("RectangleShape2D_swing")
+
 [node name="Hud" type="CanvasLayer" parent="."]
 
 [node name="Hint" type="Label" parent="Hud"]
 offset_left = 8.0
 offset_top = 8.0
-offset_right = 360.0
+offset_right = 480.0
 offset_bottom = 28.0
-text = "Hold strum L/R · Green jump (hold = higher) · Red sprint · Esc Options"
+text = "Strum L/R move · Green jump · Red sprint · Yellow swing · whammy crouch/slide · tilt super-jump · tar: alt-strum out · Esc Options"

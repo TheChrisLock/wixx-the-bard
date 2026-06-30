@@ -19,6 +19,14 @@ public partial class LevelGeometry : TileMapLayer
     private const int RowsTall = 22;    // 22 * 16 = 352px (just shy of 360)
     private const int FloorRow = 20;
 
+    // M3: a gap in the floor for the tar pit (SPEC §4.4). The TarPit Area2D in the
+    // scene sits over these columns; stepping onto it plunges Wixx in. These are
+    // level-layout indices, not gameplay-feel numbers (Tunables, rule 1).
+    private const int TarStartCol = 13;
+    private const int TarEndCol = 18; // exclusive
+
+    private static bool IsTarGap(int col) => col >= TarStartCol && col < TarEndCol;
+
     public override void _Ready()
     {
         var sourceId = BuildTileSet();
@@ -65,9 +73,14 @@ public partial class LevelGeometry : TileMapLayer
 
     private void Paint(int sourceId)
     {
-        // Floor across the bottom.
+        // Floor across the bottom, broken by the tar-pit gap (M3).
         for (var x = 0; x < ColumnsWide; x++)
         {
+            if (IsTarGap(x))
+            {
+                continue;
+            }
+
             SetCell(new Vector2I(x, FloorRow), sourceId, Vector2I.Zero);
         }
 

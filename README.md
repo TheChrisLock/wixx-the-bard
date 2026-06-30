@@ -8,7 +8,32 @@ A single-player 2D platformer played entirely on a 5-fret guitar controller.
 
 ## Milestone status
 
-**M2 — Core movement (this commit).** Wixx's real `CharacterBody2D` movement,
+**M3 — The verbs (this commit).** The full instrument's gameplay verbs on top of
+M2 movement (SPEC §2.3/§2.4/§4.4), each as pure Godot-free logic the node reads:
+
+- **Pure verb logic** (`scripts/Verbs/`, namespace `WixxTheBard.Verbs`), all
+  unit-tested under plain `dotnet test`:
+  - **Lute swing** (`SwingController`) — a short, re-armable active hitbox window.
+  - **Tilt super-jump** (`SuperJumpController`) — fires on the tilt *level* (not an
+    edge) + on-floor + cooldown, then launches via `MovementCore.ForcedLaunch` so it
+    is **uncut** (rule 4) and reaches ~5× height.
+  - **Whammy crouch/slide** (`CrouchState` + `SlideController`) — crouch lets you
+    move at a slow crouch-walk; crouching with real momentum triggers a **committed
+    slide** that glides a short distance and decays to a stop on its own (ignoring
+    the held strum), and won't re-trigger until the whammy is released and re-pressed.
+  - **Tar struggle** (`TarState`) — plunge in → sink → **clean alternate strum**
+    climbs (mashing one way barely helps) → surface breach leaps out (uncut) → full
+    submersion drowns and respawns at the entry edge.
+  - **`Cooldown`** — the shared fixed-tick gate behind the super-jump.
+- **`Player`** orchestrates all four from data-driven `GuitarInput` verbs (never raw
+  indices), in `_PhysicsProcess` at the fixed tick; the strum is consumed by exactly
+  one mode at a time (movement *or* tar — rule 5).
+- **`Enemy`** (basic, dispatchable by swing or slide) + **`TarPit`** (Area2D hazard)
+  wired into `Main.tscn`; a floor gap hosts the pit.
+- **`Tunables`** carries every M3 number (swing window, super-jump velocity/launch/
+  cooldown, slide threshold, all `Tar*` values) — no magic numbers in gameplay code.
+
+**M2 — Core movement.** Wixx's real `CharacterBody2D` movement,
 porting the validated `/reference` feel onto real collision and the data-driven
 input layer (SPEC §2.2, §2.3, §14).
 

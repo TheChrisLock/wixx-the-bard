@@ -25,7 +25,9 @@ public sealed class MovementTunables
         float terminalFallSpeed,
         float jumpVelocity,
         float jumpCutFactor,
-        float risingGravityFactor)
+        float risingGravityFactor,
+        float slideFriction,
+        float crouchWalkSpeed)
     {
         MoveAccel = moveAccel;
         MaxSpeed = maxSpeed;
@@ -38,6 +40,8 @@ public sealed class MovementTunables
         JumpVelocity = jumpVelocity;
         JumpCutFactor = jumpCutFactor;
         RisingGravityFactor = risingGravityFactor;
+        SlideFriction = slideFriction;
+        CrouchWalkSpeed = crouchWalkSpeed;
     }
 
     /// <summary>px/tick² added to horizontal velocity while a direction is held (reference MOVE_ACCEL).</summary>
@@ -73,4 +77,12 @@ public sealed class MovementTunables
 
     /// <summary>Gravity scale while rising with the jump sustained (held button or forced launch) — the floaty rise.</summary>
     public float RisingGravityFactor { get; }
+
+    /// <summary>Multiplicative horizontal decay per tick during a committed slide — a slower bleed than
+    /// <see cref="FrictionHold"/> so the slide glides a short distance before stopping.</summary>
+    public float SlideFriction { get; }
+
+    /// <summary>Top horizontal speed (px/tick) while ducked — a slow crouch-walk. Kept below the slide
+    /// trigger speed so shuffling never accidentally becomes a slide.</summary>
+    public float CrouchWalkSpeed { get; }
 }
