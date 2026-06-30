@@ -99,7 +99,7 @@ public partial class Player : CharacterBody2D
         // --- Whammy crouch / slide (resolved before the core tick: the slide latch
         //     reads last tick's speed and feeds the core, which then decays it). A
         //     committed slide glides to a stop on SlideFriction even with the strum
-        //     held; a settled crouch ducks in place. ---
+        //     held; a settled crouch still moves, but only at a slow crouch-walk. ---
         bool crouchEngaged = input?.IsPressed(GuitarVerb.Crouch) ?? false;
         _crouching = CrouchState.Evaluate(crouchEngaged, onFloor, _core.VelocityX, _verbTunables).Crouching;
         _sliding = _slide.Tick(crouchEngaged, onFloor, _core.VelocityX, _verbTunables);

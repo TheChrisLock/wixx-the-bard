@@ -111,6 +111,10 @@ public partial class Tunables : Resource
     /// so the slide glides a short distance before stopping, even with the strum held.</summary>
     [Export] public float SlideFriction { get; set; } = 0.92f;
 
+    /// <summary>Top horizontal speed (px/tick) while ducked — a slow crouch-walk. Kept below
+    /// <see cref="SlideSpeedThreshold"/> so shuffling never accidentally triggers a slide.</summary>
+    [Export] public float CrouchWalkSpeed { get; set; } = 1.2f;
+
     /// <summary>Crouch collision height as a fraction of standing height — how low a slide ducks (reference ~0.5).</summary>
     [Export] public float CrouchHeightFactor { get; set; } = 0.5f;
 
@@ -200,5 +204,6 @@ public partial class Tunables : Resource
         JumpVelocity,
         JumpCutFactor,
         RisingGravityFactor,
-        SlideFriction);
+        SlideFriction,
+        CrouchWalkSpeed);
 }

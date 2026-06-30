@@ -26,7 +26,8 @@ public class MovementCoreTest
         jumpVelocity: 13.0f,
         jumpCutFactor: 0.85f,
         risingGravityFactor: 0.6f,
-        slideFriction: 0.92f);
+        slideFriction: 0.92f,
+        crouchWalkSpeed: 1.2f);
 
     private static MovementInput Hold(bool left, bool right, bool onFloor) =>
         new(left, right, jumpHeld: false, jumpJustPressed: false, sprint: false, onFloor: onFloor);
@@ -75,6 +76,43 @@ public class MovementCoreTest
         core.Tick(Hold(left: false, right: false, onFloor: true), t);
 
         AssertThat(core.VelocityX).IsEqualApprox(0.9f * 0.78f, 0.0001f);
+    }
+
+    // ---- Crouch-walk & slide overrides ----
+
+    [TestCase]
+    public void CrouchWalkMovesButCapsAtTheLowCrouchSpeed()
+    {
+        var t = Tuning();
+        var core = new MovementCore();
+
+        for (int i = 0; i < 100; i++)
+        {
+            core.Tick(new MovementInput(false, true, false, false, false, onFloor: true, crouching: true, sliding: false), t);
+        }
+
+        AssertThat(core.VelocityX).IsGreater(0f);                            // you can shuffle while ducked
+        AssertThat(core.VelocityX).IsEqualApprox(t.CrouchWalkSpeed, 0.0001f); // ...but capped slow
+        AssertThat(core.VelocityX).IsLess(t.MaxSpeed);
+    }
+
+    [TestCase]
+    public void SlideDecaysOnSlideFrictionIgnoringHeldDirection()
+    {
+        var t = Tuning();
+        var core = new MovementCore();
+
+        for (int i = 0; i < 100; i++)
+        {
+            core.Tick(Hold(left: false, right: true, onFloor: true), t); // run up to max speed
+        }
+
+        float before = core.VelocityX;
+        // Sliding with the strum still held right: the held direction is ignored and
+        // velocity bleeds off on SlideFriction.
+        core.Tick(new MovementInput(false, true, false, false, false, onFloor: true, crouching: true, sliding: true), t);
+
+        AssertThat(core.VelocityX).IsEqualApprox(before * t.SlideFriction, 0.0001f);
     }
 
     // ---- Sprint ----

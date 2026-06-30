@@ -98,17 +98,13 @@ public sealed class MovementCore
         float maxSpeed = t.MaxSpeed * SprintCharge;
 
         // --- Horizontal (Hold / Scheme B): held direction accelerates, none decays.
-        //     Crouch/slide override the strum: a committed slide glides to a stop on
-        //     SlideFriction (a short distance, ignoring held strum), and a settled
-        //     crouch ducks in place (no running while ducked). ---
+        //     A committed slide overrides the strum and glides to a stop on
+        //     SlideFriction (a short distance, ignoring held direction). A crouch
+        //     still moves on a held direction, but is capped to a slow crouch-walk. ---
         int dir = (input.MoveRight ? 1 : 0) - (input.MoveLeft ? 1 : 0);
         if (input.Sliding)
         {
             VelocityX *= t.SlideFriction;
-        }
-        else if (input.Crouching)
-        {
-            VelocityX *= t.FrictionHold;
         }
         else if (dir != 0)
         {
@@ -120,7 +116,10 @@ public sealed class MovementCore
             VelocityX *= t.FrictionHold;
         }
 
-        VelocityX = Math.Clamp(VelocityX, -maxSpeed, maxSpeed);
+        // Crouch-walk caps speed low (you shuffle while ducked, not run); a slide is
+        // exempt so it keeps the momentum it carried in.
+        float cap = (input.Crouching && !input.Sliding) ? t.CrouchWalkSpeed : maxSpeed;
+        VelocityX = Math.Clamp(VelocityX, -cap, cap);
 
         // --- Forced-launch timer (rule 4): count down before reading it below. ---
         if (LaunchFrames > 0)

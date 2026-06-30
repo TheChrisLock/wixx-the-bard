@@ -16,6 +16,7 @@ JumpVelocity = 13.0
 JumpCutFactor = 0.85
 RisingGravityFactor = 0.6
 SlideFriction = 0.92
+CrouchWalkSpeed = 1.2
 SwingActiveTicks = 12
 EnemyKnockbackSpeed = 3.0
 ContactInvulnTicks = 30

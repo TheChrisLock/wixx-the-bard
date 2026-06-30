@@ -17,8 +17,8 @@ M2 movement (SPEC §2.3/§2.4/§4.4), each as pure Godot-free logic the node rea
   - **Tilt super-jump** (`SuperJumpController`) — fires on the tilt *level* (not an
     edge) + on-floor + cooldown, then launches via `MovementCore.ForcedLaunch` so it
     is **uncut** (rule 4) and reaches ~5× height.
-  - **Whammy crouch/slide** (`CrouchState` + `SlideController`) — crouch ducks in
-    place (no running while ducked); crouching with momentum triggers a **committed
+  - **Whammy crouch/slide** (`CrouchState` + `SlideController`) — crouch lets you
+    move at a slow crouch-walk; crouching with real momentum triggers a **committed
     slide** that glides a short distance and decays to a stop on its own (ignoring
     the held strum), and won't re-trigger until the whammy is released and re-pressed.
   - **Tar struggle** (`TarState`) — plunge in → sink → **clean alternate strum**
