@@ -64,6 +64,22 @@ public partial class BossHud : Control
         {
             DrawBanner();
         }
+        else if (_player.BossDefeated)
+        {
+            DrawClearedFlag();
+        }
+    }
+
+    /// <summary>
+    /// The biome's end-to-end closure (M6): once the timed win banner has cleared,
+    /// a small permanent flag keeps confirming the Choirbreaker stays defeated
+    /// (rule 7 — reads <see cref="Player.BossDefeated"/>, never sets it).
+    /// </summary>
+    private void DrawClearedFlag()
+    {
+        DrawString(_font, new Vector2(8f, GetViewportRect().Size.Y - 10f),
+            $"♪ {BossCharts.ChoirbreakerName} silenced — the song has returned",
+            HorizontalAlignment.Left, -1, 13, new Color("8ff0a4"));
     }
 
     private void DrawStatusBar()
