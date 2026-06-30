@@ -8,7 +8,30 @@ A single-player 2D platformer played entirely on a 5-fret guitar controller.
 
 ## Milestone status
 
-**M5 — Boss: Rock Off (this commit).** One boss duel end-to-end (SPEC §6): the
+**M6 — ★ Vertical slice + FUN GATE (this commit).** Assembles M1-M5's systems into
+one continuous Exploration biome end-to-end (SPEC §12) — the human-on-hardware
+"is it fun?" checkpoint before any phase-2 work.
+
+- **`LevelGeometry`** now builds one ~1600px-wide biome instead of a single-screen
+  test bed: a rolling-terrain warm-up (one-tile steps — pillar 1's flow over
+  precision, no blind drops outside the one hazard that catches its own fall, the
+  tar pit), the tar struggle (SPEC §4.4), a long sprint stretch, a floating island
+  far above any normal jump's reach that only the tilt super-jump can claim (SPEC
+  §4.1's "hidden high ledges"), a four-enemy gauntlet, and the Rock Off arena at
+  the biome's end (its back wall doubles as the level's right boundary). Level
+  layout stays level-design data, not a `Tunables` number (rule 1 covers
+  gameplay *feel*, not content).
+- **`Main.tscn`** gets a `Camera2D` on the Player (smoothed, limited to the
+  biome's bounds) so the level genuinely scrolls — every other milestone's
+  systems (input, movement, verbs, spell performance, Rock Off) are unchanged,
+  only re-placed along the new path.
+- **`BossHud`** gains a small permanent "the song has returned" flag once the
+  Choirbreaker stays defeated, past the M5 banner's timed hold — the biome's
+  end-to-end closure beat (still rule 7: it only reads `Player.BossDefeated`).
+- No new pure-logic module: M6 is content assembly + scene wiring on top of
+  M1-M5's already-tested systems, so it adds no new `dotnet test` surface.
+
+**M5 — Boss: Rock Off.** One boss duel end-to-end (SPEC §6): the
 Choirbreaker, a Silent Empire enforcer, fought across five escalating phases that
 alternate Call & Response and Highway formats.
 
