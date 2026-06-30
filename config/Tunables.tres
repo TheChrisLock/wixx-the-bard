@@ -50,3 +50,6 @@ PerformanceResultBannerTicks = 120
 DefaultLatencyOffsetMs = 0.0
 CalibrationBeatMs = 1000.0
 CalibrationSampleTarget = 8
+BossResolveMax = 4
+BossTelegraphPauseMs = 400.0
+BossPhaseGapTicks = 60

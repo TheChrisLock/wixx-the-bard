@@ -8,7 +8,48 @@ A single-player 2D platformer played entirely on a 5-fret guitar controller.
 
 ## Milestone status
 
-**M4 — Spell performance (this commit).** One ability end-to-end (SPEC §5): trigger →
+**M5 — Boss: Rock Off (this commit).** One boss duel end-to-end (SPEC §6): the
+Choirbreaker, a Silent Empire enforcer, fought across five escalating phases that
+alternate Call & Response and Highway formats.
+
+- **Pure, Godot-free boss core** (`scripts/Boss/`, namespace `WixxTheBard.Boss`),
+  unit-tested under plain `dotnet test`:
+  - **`BossFight`** — the multi-phase duel state machine. Reuses M4's
+    `SpellPerformance`/`PerformanceJudge` to judge each phase rather than
+    re-deriving rhythm math: a **Call & Response** phase telegraphs the boss's
+    phrase first (a non-judged preview), then judges the player's echo of the same
+    chart; a **Highway** phase is judged immediately, no telegraph. Every miss
+    (either phase kind) costs **Resolve**, a small pool that ends the duel in
+    immediate defeat if it hits zero — real risk mid-fight, not just a final tally
+    (SPEC §6 "miss lets the boss land a hit" / "missed notes open you to boss
+    attacks"). Only Highway hits accumulate toward the boss's cumulative accuracy;
+    reaching the end of the phase list with Resolve still standing wins only if
+    that accuracy clears the **same** `PerformanceSuccessThreshold` a spell
+    performance uses — no new threshold number (rule 1), one consistent meaning of
+    "played well enough" everywhere a chart is judged (rule 6).
+  - **`BossPhase` + `BossCharts.Choirbreaker`** — the boss's five fixed phrases,
+    escalating in tempo/density exactly as SPEC §6 describes (learn a phrase →
+    survive an onslaught → harder phrase → faster highway → final flurry). Note
+    times are content, like `SpellCharts`, not feel-tunables.
+  - **`BossTunables`** — the duel's pacing/risk numbers (Resolve pool size,
+    telegraph pause, inter-phase gap); the rhythm windows/threshold it judges
+    against are M4's, not duplicated.
+- **`Player`** triggers a Rock Off on `BossArena` entry and owns the strum as the
+  fight's sole consumer (rule 5), exactly like a spell performance but at full real
+  time (no global time-slow — that stays a spell-only effect, SPEC §5.2). A win
+  permanently defeats the Choirbreaker; a loss respawns Wixx at the arena's entry
+  point, retryable by walking back in (mirrors the tar hazard's "unforgiving on
+  purpose", SPEC §4.4).
+- **Presentation reads state, never drives it (rule 7):** `BossHud` draws the
+  phase name, a Resolve meter, a boss "HP" bar (cumulative Highway accuracy), the
+  telegraph preview, the live highway, and the win/lose banner — kept as its own
+  CanvasLayer rather than refactoring M4's `PerformanceHud` (rule 8). `Boss` is a
+  grey-box world placeholder (art deferred post-M6, SPEC §8) that flashes on a
+  landed Highway hit and fades out on victory.
+- **`Tunables`** carries every M5 number (`BossResolveMax`, `BossTelegraphPauseMs`,
+  `BossPhaseGapTicks`) — no magic numbers in gameplay code.
+
+**M4 — Spell performance.** One ability end-to-end (SPEC §5): trigger →
 global time-slow + desaturation → right-to-left note chart (calibration-relative) →
 success fires the spell + cooldown / fail = cooldown only.
 
@@ -110,6 +151,9 @@ scenes/           Godot scenes (Main.tscn, Options.tscn)
 scripts/          C# gameplay scripts (Game, Player, LevelGeometry, GuitarInput, OptionsScreen)
 scripts/Controls/ Pure, Godot-free input core (bindings, capture, presets, calibration) — unit-tested
 scripts/Movement/ Pure, Godot-free movement core (Hold scheme, jump, sprint, rule-4 launch) — unit-tested
+scripts/Verbs/    Pure, Godot-free verb logic (swing, super-jump, crouch/slide, tar) — unit-tested
+scripts/Performance/ Pure, Godot-free spell-performance rhythm core + presentation — unit-tested
+scripts/Boss/     Pure, Godot-free Rock Off boss-duel core + presentation — unit-tested
 config/           Tunables.cs + Tunables.tres — the single source of gameplay numbers
 tests/            gdUnit4 C# tests
 reference/        READ-ONLY validated GDScript prototype (WixxMovement.gd)

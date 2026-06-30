@@ -1,4 +1,5 @@
 using Godot;
+using WixxTheBard.Boss;
 using WixxTheBard.Controls;
 using WixxTheBard.Movement;
 using WixxTheBard.Performance;
@@ -168,6 +169,17 @@ public partial class Tunables : Resource
     /// <summary>Ticks the success/fail result banner stays up after a performance.</summary>
     [Export] public int PerformanceResultBannerTicks { get; set; } = 120;
 
+    [ExportGroup("Boss — Rock Off (M5; pacing/risk, SPEC §6)")]
+
+    /// <summary>Missed notes (any phase) Wixx can take before a Rock Off ends in defeat.</summary>
+    [Export] public int BossResolveMax { get; set; } = 4;
+
+    /// <summary>Silent pause (ms) after a Call &amp; Response telegraph finishes scrolling, before the player's echo begins.</summary>
+    [Export] public double BossTelegraphPauseMs { get; set; } = 400.0;
+
+    /// <summary>Fixed ticks of breathing room between Rock Off phases.</summary>
+    [Export] public int BossPhaseGapTicks { get; set; } = 60;
+
     [ExportGroup("A/V Calibration (M1)")]
 
     /// <summary>Default latency offset (ms) until the player calibrates.</summary>
@@ -220,6 +232,12 @@ public partial class Tunables : Resource
         PerformanceTimeSlowFactor,
         SpellCooldownTicks,
         PerformanceResultBannerTicks);
+
+    /// <summary>Build the Godot-free <see cref="BossTunables"/> the pure Rock Off state machine reads.</summary>
+    public BossTunables BuildBossTunables() => new(
+        BossResolveMax,
+        BossTelegraphPauseMs,
+        BossPhaseGapTicks);
 
     /// <summary>Build the Godot-free <see cref="MovementTunables"/> the pure movement core reads.</summary>
     public MovementTunables BuildMovementTunables() => new(
