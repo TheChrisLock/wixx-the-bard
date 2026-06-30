@@ -30,6 +30,13 @@ window/size/window_height_override=720
 window/stretch/mode="viewport"
 window/stretch/aspect="keep"
 
+[physics]
+
+; Fixed 60 Hz gameplay step (CLAUDE.md rule 3 / SPEC §14). The /reference movement
+; constants are per-tick @ 60 Hz and port 1:1 only while this holds; the Player
+; scales per-tick velocity to px/second using this rate.
+common/physics_ticks_per_second=60
+
 [input]
 
 ; M0 keyboard bindings. The real, remappable data-driven guitar layer lands in M1;

@@ -16,6 +16,7 @@ script = ExtResource("1_level")
 
 [node name="Player" type="CharacterBody2D" parent="."]
 position = Vector2(160, 240)
+floor_snap_length = 8.0
 script = ExtResource("2_player")
 Tunables = ExtResource("3_tun")
 
@@ -36,4 +37,4 @@ offset_left = 8.0
 offset_top = 8.0
 offset_right = 360.0
 offset_bottom = 28.0
-text = "Esc — Options (remap + A/V calibration)"
+text = "Hold strum L/R · Green jump (hold = higher) · Red sprint · Esc Options"

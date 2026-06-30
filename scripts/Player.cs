@@ -1,70 +1,64 @@
 using Godot;
 using WixxTheBard.Controls;
+using WixxTheBard.Movement;
 
 namespace WixxTheBard;
 
 /// <summary>
-/// Hello-world actor: a <see cref="CharacterBody2D"/> box on the real TileMap,
-/// proving collision and fixed-step movement. As of M1 it reads the data-driven
-/// <see cref="GuitarInput"/> layer (verbs, never raw indices — CLAUDE.md rule 2),
-/// so the same box responds to a bound guitar or the keyboard fallback. This is
-/// the surface for feel-verifying the input pipeline on real hardware; the full
-/// Hold-scheme movement contract (sprint, variable jump) lands in M2.
+/// Wixx's <see cref="CharacterBody2D"/> — M2 core movement. It reads the
+/// data-driven <see cref="GuitarInput"/> verbs (never raw indices — CLAUDE.md
+/// rule 2), feeds them to the pure, authoritative <see cref="MovementCore"/>
+/// (rule 7: gameplay state drives, visuals only read), and moves against the real
+/// TileMap with <see cref="CharacterBody2D.MoveAndSlide"/>.
 ///
-/// All physics runs in <see cref="_PhysicsProcess"/> at the fixed 60 Hz tick
-/// (rule 3) and every number comes from <see cref="Tunables"/> (rule 1).
+/// The Hold scheme, variable-height jump (with rule 4's forced-launch exemption
+/// living in the core), and sprint all come from <see cref="MovementCore"/>; every
+/// number comes from <see cref="Tunables"/> (rule 1). All of it runs in
+/// <see cref="_PhysicsProcess"/> at the fixed tick (rule 3). The core's velocity is
+/// in px/tick (the units the <c>/reference</c> constants assume); we scale it to
+/// Godot's px/second using the engine's configured physics tick rate.
 /// </summary>
 public partial class Player : CharacterBody2D
 {
     [Export] public Tunables Tunables { get; set; } = null!;
+
+    private readonly MovementCore _core = new();
+    private MovementTunables _moveTunables = null!;
+    private float _ticksPerSecond;
 
     public override void _Ready()
     {
         // Fall back to the on-disk resource so the scene runs even if the
         // export slot wasn't wired in the editor.
         Tunables ??= GD.Load<Tunables>("res://config/Tunables.tres");
+        _moveTunables = Tunables.BuildMovementTunables();
+        _ticksPerSecond = (float)Engine.PhysicsTicksPerSecond;
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        var dt = (float)delta;
-        var velocity = Velocity;
+        var move = BuildInput(GuitarInput.Instance, IsOnFloor());
+        _core.Tick(move, _moveTunables);
 
-        if (!IsOnFloor())
-        {
-            velocity.Y = Mathf.Min(velocity.Y + Tunables.Gravity * dt, Tunables.MaxFallSpeed);
-        }
-
-        var input = GuitarInput.Instance;
-        var direction = 0.0f;
-        if (input != null)
-        {
-            if (input.IsPressed(GuitarVerb.MoveRight))
-            {
-                direction += 1.0f;
-            }
-
-            if (input.IsPressed(GuitarVerb.MoveLeft))
-            {
-                direction -= 1.0f;
-            }
-        }
-
-        if (direction != 0.0f)
-        {
-            velocity.X = Mathf.MoveToward(velocity.X, direction * Tunables.MoveSpeed, Tunables.Acceleration * dt);
-        }
-        else
-        {
-            velocity.X = Mathf.MoveToward(velocity.X, 0.0f, Tunables.Friction * dt);
-        }
-
-        if (input != null && input.JustPressed(GuitarVerb.Jump) && IsOnFloor())
-        {
-            velocity.Y = -Tunables.JumpVelocity;
-        }
-
-        Velocity = velocity;
+        // Core works in px/tick; MoveAndSlide integrates px/second * delta. With a
+        // fixed 60 Hz step this restores the reference's per-tick displacement 1:1.
+        Velocity = new Vector2(_core.VelocityX, _core.VelocityY) * _ticksPerSecond;
         MoveAndSlide();
+    }
+
+    private static MovementInput BuildInput(GuitarInput? input, bool onFloor)
+    {
+        if (input == null)
+        {
+            return new MovementInput(false, false, false, false, false, onFloor);
+        }
+
+        return new MovementInput(
+            moveLeft: input.IsPressed(GuitarVerb.MoveLeft),
+            moveRight: input.IsPressed(GuitarVerb.MoveRight),
+            jumpHeld: input.IsPressed(GuitarVerb.Jump),
+            jumpJustPressed: input.JustPressed(GuitarVerb.Jump),
+            sprint: input.IsPressed(GuitarVerb.Sprint),
+            onFloor: onFloor);
     }
 }
