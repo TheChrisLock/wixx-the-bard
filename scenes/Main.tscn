@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://b0wixxmain00000"]
+[gd_scene load_steps=16 format=3 uid="uid://b0wixxmain00000"]
 
 [ext_resource type="Script" path="res://scripts/Game.cs" id="0_game"]
 [ext_resource type="Script" path="res://scripts/LevelGeometry.cs" id="1_level"]
@@ -6,6 +6,13 @@
 [ext_resource type="Resource" path="res://config/Tunables.tres" id="3_tun"]
 [ext_resource type="Script" path="res://scripts/Enemy.cs" id="4_enemy"]
 [ext_resource type="Script" path="res://scripts/TarPit.cs" id="5_tar"]
+[ext_resource type="Shader" path="res://assets/shaders/Desaturate.gdshader" id="6_desat_sh"]
+[ext_resource type="Script" path="res://scripts/Performance/DesaturationOverlay.cs" id="7_desat"]
+[ext_resource type="Script" path="res://scripts/Performance/PerformanceHud.cs" id="8_hud"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_desat"]
+shader = ExtResource("6_desat_sh")
+shader_parameter/amount = 0.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
 size = Vector2(16, 16)
@@ -108,11 +115,34 @@ collision_mask = 4
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/SwingArea"]
 shape = SubResource("RectangleShape2D_swing")
 
+[node name="Desat" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="Desat"]
+copy_mode = 2
+
+[node name="Overlay" type="ColorRect" parent="Desat"]
+material = SubResource("ShaderMaterial_desat")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(1, 1, 1, 1)
+script = ExtResource("7_desat")
+
+[node name="Performance" type="CanvasLayer" parent="."]
+layer = 3
+
+[node name="Highway" type="Control" parent="Performance"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("8_hud")
+
 [node name="Hud" type="CanvasLayer" parent="."]
 
 [node name="Hint" type="Label" parent="Hud"]
 offset_left = 8.0
 offset_top = 8.0
-offset_right = 480.0
+offset_right = 620.0
 offset_bottom = 28.0
-text = "Strum L/R move · Green jump · Red sprint · Yellow swing · whammy crouch/slide · tilt super-jump · tar: alt-strum out · Esc Options"
+text = "Strum move · Green jump · Red sprint · Yellow swing · whammy crouch/slide · tilt super-jump · Blue: cast Kindle (strum+fret the chart) · tar: alt-strum · Esc Options"
