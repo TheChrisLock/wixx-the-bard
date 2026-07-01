@@ -56,10 +56,22 @@ public class ControllerPresetsTest
         AssertThat(whammy.Direction).IsEqual(1);
         AssertThat(System.Math.Abs(whammy.RestValue - (-1.0f)) < 0.01f).IsTrue();
 
-        // Tilt: axis 3.
+        // Tilt: axis 3, engaging on deflection either way (SPEC §14 — polarity unknowable).
         AssertThat(set.TryGet(GuitarVerb.SuperJump, out var tilt)).IsTrue();
         AssertThat(tilt.Kind == BindingKind.Axis).IsTrue();
         AssertThat(tilt.Index).IsEqual(3);
+        AssertThat(tilt.Bidirectional).IsTrue();
+    }
+
+    [TestCase]
+    public void EveryPresetBindsTiltBidirectionally()
+    {
+        foreach (var name in ControllerPresets.Names)
+        {
+            var set = ControllerPresets.Build(name)!;
+            AssertThat(set.TryGet(GuitarVerb.SuperJump, out var tilt)).IsTrue();
+            AssertThat(tilt.Bidirectional).IsTrue();
+        }
     }
 
     private static void AssertButton(BindingSet set, GuitarVerb verb, int index)

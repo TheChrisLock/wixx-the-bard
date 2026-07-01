@@ -17,7 +17,7 @@ public class InputSettingsSerializerTest
         var settings = new InputSettings { LatencyOffsetMs = 33.0, PresetName = "Custom" };
         settings.Bindings.Set(GuitarVerb.Jump, InputBinding.Button(0));
         settings.Bindings.Set(GuitarVerb.Crouch, InputBinding.Axis(2, -1.0f, 1));
-        settings.Bindings.Set(GuitarVerb.SuperJump, InputBinding.Axis(3, 0.3f, -1));
+        settings.Bindings.Set(GuitarVerb.SuperJump, InputBinding.Axis(3, 0.3f, -1, bidirectional: true));
 
         string json = InputSettingsSerializer.Serialize(settings);
         var loaded = InputSettingsSerializer.Deserialize(json);
@@ -37,6 +37,7 @@ public class InputSettingsSerializerTest
 
         AssertThat(loaded.Bindings.TryGet(GuitarVerb.SuperJump, out var tilt)).IsTrue();
         AssertThat(tilt.Direction).IsEqual(-1);
+        AssertThat(tilt.Bidirectional).IsTrue();
         AssertThat(System.Math.Abs(tilt.RestValue - 0.3f) < 0.01f).IsTrue();
     }
 

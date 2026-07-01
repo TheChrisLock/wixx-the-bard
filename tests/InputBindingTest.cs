@@ -48,6 +48,22 @@ public class InputBindingTest
     }
 
     [TestCase]
+    public void BidirectionalAxisEngagesEitherWayFromRest()
+    {
+        // Tilt's polarity is unknowable per guitar (SPEC §14) — engagement must not
+        // depend on which way the axis happens to deflect from its learned rest.
+        var binding = InputBinding.Axis(3, 0.0f, direction: 1, bidirectional: true);
+
+        // At rest: not engaged.
+        AssertThat(binding.IsEngaged(Snap(new bool[0], new[] { 0f, 0f, 0f, 0f }), Tuning())).IsFalse();
+        // Deflected in the nominal "captured" direction: engaged.
+        AssertThat(binding.IsEngaged(Snap(new bool[0], new[] { 0f, 0f, 0f, 0.5f }), Tuning())).IsTrue();
+        // Deflected the OTHER way — a directional binding would reject this, but
+        // bidirectional must still engage.
+        AssertThat(binding.IsEngaged(Snap(new bool[0], new[] { 0f, 0f, 0f, -0.5f }), Tuning())).IsTrue();
+    }
+
+    [TestCase]
     public void OutOfRangeIndexIsSafe()
     {
         var binding = InputBinding.Button(99);

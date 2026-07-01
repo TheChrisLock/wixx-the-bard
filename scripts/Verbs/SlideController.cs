@@ -3,11 +3,13 @@ namespace WixxTheBard.Verbs;
 /// <summary>
 /// The whammy slide as a pure, Godot-free <b>committed</b> state (SPEC §2.4). A
 /// slide is not a per-tick condition: it is triggered once by crouching with
-/// momentum, then runs its course — gliding a short distance and decaying to a stop
-/// even if the player keeps holding the strum (the movement core applies
-/// <c>SlideFriction</c> while it is active and ignores the held direction). It does
-/// not re-trigger while the whammy stays held; releasing and re-pressing the whammy
-/// re-arms it, so a held crouch can't stutter-loop into repeated slides.
+/// momentum <em>while sprinting</em> — a slow crouch-walk can't slide, only a
+/// sprinted approach can — then runs its course, gliding a short distance and
+/// decaying to a stop even if the player keeps holding the strum (the movement
+/// core applies <c>SlideFriction</c> while it is active and ignores the held
+/// direction). It does not re-trigger while the whammy stays held; releasing and
+/// re-pressing the whammy re-arms it, so a held crouch can't stutter-loop into
+/// repeated slides.
 ///
 /// It holds the latch + a "consumed" flag and no Godot types, so it is unit-tested
 /// directly; all thresholds come from <see cref="VerbTunables"/> (CLAUDE.md rule 1).
@@ -23,10 +25,12 @@ public sealed class SlideController
     /// <summary>
     /// Advance one fixed tick. Releasing the crouch (<paramref name="crouchEngaged"/>
     /// false) re-arms the next slide; otherwise, while grounded, a slide triggers when
-    /// speed clears <c>SlideSpeedThreshold</c> and ends once it bleeds below
-    /// <c>SlideStopSpeed</c>. Returns whether a slide is active this tick.
+    /// <paramref name="sprintEngaged"/> and speed clears <c>SlideSpeedThreshold</c>, and
+    /// ends once it bleeds below <c>SlideStopSpeed</c> — a slide already underway keeps
+    /// gliding to its stop even if Sprint is released mid-slide, same as the held strum.
+    /// Returns whether a slide is active this tick.
     /// </summary>
-    public bool Tick(bool crouchEngaged, bool onFloor, float speed, VerbTunables t)
+    public bool Tick(bool crouchEngaged, bool sprintEngaged, bool onFloor, float speed, VerbTunables t)
     {
         if (!crouchEngaged)
         {
@@ -50,7 +54,7 @@ public sealed class SlideController
                 _consumed = true; // ran its course — no auto re-slide while still crouched
             }
         }
-        else if (!_consumed && absSpeed > t.SlideSpeedThreshold)
+        else if (!_consumed && sprintEngaged && absSpeed > t.SlideSpeedThreshold)
         {
             _active = true;
         }
