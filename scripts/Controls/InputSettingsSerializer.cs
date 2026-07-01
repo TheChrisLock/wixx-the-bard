@@ -19,6 +19,7 @@ public static class InputSettingsSerializer
         public int Index { get; set; }
         public float Rest { get; set; }
         public int Dir { get; set; }
+        public bool Bidi { get; set; }
     }
 
     private sealed class RootDto
@@ -48,6 +49,7 @@ public static class InputSettingsSerializer
                 Index = binding.Index,
                 Rest = binding.RestValue,
                 Dir = binding.Direction,
+                Bidi = binding.Bidirectional,
             });
         }
 
@@ -95,7 +97,7 @@ public static class InputSettingsSerializer
 
             var binding = kind == BindingKind.Button
                 ? InputBinding.Button(dto.Index)
-                : InputBinding.Axis(dto.Index, dto.Rest, dto.Dir);
+                : InputBinding.Axis(dto.Index, dto.Rest, dto.Dir, dto.Bidi);
             settings.Bindings.Set(verb, binding);
         }
 

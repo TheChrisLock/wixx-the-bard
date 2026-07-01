@@ -189,6 +189,14 @@ public partial class GuitarInput : Node
 
     private void CompleteCapture(InputBinding binding)
     {
+        // Tilt's polarity is unknowable per guitar (SPEC §14) — whichever direction the
+        // player happened to tilt during capture must not become the only one that
+        // fires later; lock it to engage either way from the learned rest.
+        if (binding.Kind == BindingKind.Axis && _captureVerb == GuitarVerb.SuperJump)
+        {
+            binding = InputBinding.Axis(binding.Index, binding.RestValue, binding.Direction, bidirectional: true);
+        }
+
         _bindings.Set(_captureVerb, binding);
         ActivePresetName = string.Empty; // bindings are now custom
         var verb = _captureVerb;

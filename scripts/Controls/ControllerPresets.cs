@@ -29,6 +29,7 @@ public static class ControllerPresets
         public readonly int Index;
         public readonly float Rest;
         public readonly int Direction;
+        public readonly bool Bidirectional;
 
         public Row(GuitarVerb verb, int button)
         {
@@ -37,21 +38,27 @@ public static class ControllerPresets
             Index = button;
             Rest = 0f;
             Direction = 0;
+            Bidirectional = false;
         }
 
-        public Row(GuitarVerb verb, int axis, float rest, int direction)
+        public Row(GuitarVerb verb, int axis, float rest, int direction, bool bidirectional)
         {
             Verb = verb;
             Kind = BindingKind.Axis;
             Index = axis;
             Rest = rest;
             Direction = direction;
+            Bidirectional = bidirectional;
         }
     }
 
     private static Row Btn(GuitarVerb verb, int button) => new(verb, button);
 
-    private static Row Axis(GuitarVerb verb, int axis, float rest, int direction) => new(verb, axis, rest, direction);
+    private static Row Axis(GuitarVerb verb, int axis, float rest, int direction) => new(verb, axis, rest, direction, bidirectional: false);
+
+    /// <summary>Tilt's polarity is unknowable per guitar (SPEC §14) — it engages on deflection
+    /// either way from rest, so no direction is captured for it.</summary>
+    private static Row TiltAxis(GuitarVerb verb, int axis, float rest) => new(verb, axis, rest, direction: 1, bidirectional: true);
 
     /// <summary>Validated Ardwiino test guitar (SPEC §14) — used as the out-of-box default.</summary>
     public const string DefaultPresetName = "Ardwiino (validated test guitar)";
@@ -68,7 +75,7 @@ public static class ControllerPresets
             Btn(GuitarVerb.MoveLeft, 11),  // strum up
             Btn(GuitarVerb.MoveRight, 12), // strum down
             Axis(GuitarVerb.Crouch, 2, -1.0f, 1),    // whammy rests at −1, sweeps toward +1
-            Axis(GuitarVerb.SuperJump, 3, 0.0f, 1),  // tilt — rest re-learned by the binder per guitar
+            TiltAxis(GuitarVerb.SuperJump, 3, 0.0f),  // tilt — rest re-learned by the binder per guitar; engages either way
         },
 
         // PROVISIONAL — verify on hardware. Frets on face buttons, strum on a hat
@@ -83,7 +90,7 @@ public static class ControllerPresets
             Axis(GuitarVerb.MoveLeft, 7, 0.0f, -1),
             Axis(GuitarVerb.MoveRight, 7, 0.0f, 1),
             Axis(GuitarVerb.Crouch, 4, -1.0f, 1),
-            Axis(GuitarVerb.SuperJump, 1, 0.0f, -1),
+            TiltAxis(GuitarVerb.SuperJump, 1, 0.0f),
         },
 
         ["PlayStation 3 Guitar (provisional)"] = new[]
@@ -96,7 +103,7 @@ public static class ControllerPresets
             Btn(GuitarVerb.MoveLeft, 11),
             Btn(GuitarVerb.MoveRight, 12),
             Axis(GuitarVerb.Crouch, 2, -1.0f, 1),
-            Axis(GuitarVerb.SuperJump, 3, 0.0f, 1),
+            TiltAxis(GuitarVerb.SuperJump, 3, 0.0f),
         },
 
         ["Guitar Hero Live (provisional)"] = new[]
@@ -109,7 +116,7 @@ public static class ControllerPresets
             Axis(GuitarVerb.MoveLeft, 7, 0.0f, -1),
             Axis(GuitarVerb.MoveRight, 7, 0.0f, 1),
             Axis(GuitarVerb.Crouch, 4, -1.0f, 1),
-            Axis(GuitarVerb.SuperJump, 3, 0.0f, 1),
+            TiltAxis(GuitarVerb.SuperJump, 3, 0.0f),
         },
 
         ["Rock Band 4 Guitar (provisional)"] = new[]
@@ -122,7 +129,7 @@ public static class ControllerPresets
             Btn(GuitarVerb.MoveLeft, 11),
             Btn(GuitarVerb.MoveRight, 12),
             Axis(GuitarVerb.Crouch, 2, -1.0f, 1),
-            Axis(GuitarVerb.SuperJump, 3, 0.0f, 1),
+            TiltAxis(GuitarVerb.SuperJump, 3, 0.0f),
         },
     };
 
@@ -144,7 +151,7 @@ public static class ControllerPresets
         {
             var binding = row.Kind == BindingKind.Button
                 ? InputBinding.Button(row.Index)
-                : InputBinding.Axis(row.Index, row.Rest, row.Direction);
+                : InputBinding.Axis(row.Index, row.Rest, row.Direction, row.Bidirectional);
             set.Set(row.Verb, binding);
         }
 
